@@ -1,0 +1,11 @@
+[ CONST a int (add 1 2);
+ CONST b int (sub 3 2);
+ CONST c int (mul 1 2);
+ CONST d int (div 6 2);
+ CONST e bool (and true false);
+ CONST f bool (or true false);
+ CONST g bool (eq 1 2);
+ CONST h bool (lt 1 2);
+ CONST i bool (not true);
+ ECHO a]
+

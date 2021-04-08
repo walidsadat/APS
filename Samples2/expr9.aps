@@ -1,0 +1,6 @@
+[
+    VAR v int;
+    PROC REC pr [x:int] [IF (eq x 0) [SET v 42] [CALL pr 0]];
+    CALL pr 1;
+    ECHO v
+]
