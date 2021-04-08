@@ -7,6 +7,7 @@ and env = (string * value) list
 and 'a address = None | Some of 'a | Any 
 and memory = value address list
 
+
 let rec int_of_value v =
   match v with
     Value i -> i
@@ -36,16 +37,6 @@ and alloc_memory m =
       n.(l) <- Any;
       (l,n)
   )
-
-and clean_memory m env =
-      for i = 0 to (Array.length m - 1) do
-        if (m.(i) <> None && not(List.exists (fun (_, v) -> (
-                                match v with
-                                  Address a when a = i -> true
-                                  |_ -> false)) env))
-      then m.(i) <- None
-      done;
-      m
 
 and eval_prog p =
   let (_, flux) = eval_block ([], [|None|], []) p in
@@ -82,22 +73,22 @@ and eval_stat (env,mem,flux) stat =
                     |_ -> failwith (id^"not a Var"))
   |IfStat (c, i, e) -> (match (eval_sexpr (env, mem) c) with
                         Value 1 -> let (mem,flux) = eval_block (env, mem, flux) i in
-                                    ((clean_memory mem env, flux))
+                                    ((mem, flux))
                         |Value 0 -> let (mem,flux) = eval_block (env, mem, flux) e in
-                        ((clean_memory mem env, flux))
+                        ((mem, flux))
                         |_ -> failwith "Error in if condition")
   |While (c,b) -> (match (eval_sexpr (env, mem) c) with
                     Value 0 -> (mem,flux)
                     |Value 1 -> let (m,f) = eval_block (env, mem,flux) b in
-                                eval_stat (env, (clean_memory m env),f) (While (c,b))
+                                eval_stat (env, m,f) (While (c,b))
                     |_ -> failwith "Error in while condition")
   |Call (id,e) -> let p = getInEnv env id and args = (List.map (eval_sexpr (env,mem)) e) in
                 (match p with
                 ProcClosure (b, r) -> let (m,f) = eval_block((r args), mem, flux) b in
-                ((clean_memory m env),f)
+                (m,f)
                 |RecProcClosure rp -> let (b, r) = rp p in
                 let (m,f) = eval_block((r args), mem, flux) b in
-                ((clean_memory m env),f)
+                (m,f)
                 |_ -> failwith "Procedure error")
 
 and eval_sexpr (env, mem) value =
