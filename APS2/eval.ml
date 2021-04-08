@@ -1,17 +1,11 @@
 open Ast
 
-type value = Value of int | Closure of closure | RecClosure of recclosure
-            | Address of int | ProcClosure of procclosure | RecProcClosure of recprocclosure
-            | Block of int * int
-and closure = sexpr * (value list -> env)
-and recclosure = value -> closure
-and procclosure = (cmd list * (value list -> env))
-and recprocclosure = value -> procclosure
+type value = Value of int | Closure of sexpr * (value list -> env) | RecClosure of (value -> (sexpr * (value list -> env)))
+            | Address of int | ProcClosure of (cmd list * (value list -> env)) | RecProcClosure of (value -> (cmd list * (value list -> env)))
 and flux = int list
 and env = (string * value) list
 and 'a address = None | Some of 'a | Any 
 and memory = value address list
-
 
 let rec int_of_value v =
   match v with

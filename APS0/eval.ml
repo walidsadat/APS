@@ -1,8 +1,6 @@
 open Ast
 
-type value = Value of int | Closure of closure | RecClosure of recclosure
-and closure = sexpr * (value list -> env)
-and recclosure = value -> closure
+type value = Value of int | Closure of sexpr * (value list -> env) | RecClosure of (value -> (sexpr * (value list -> env)))
 and flux = int list
 and env = (string * value) list
 
