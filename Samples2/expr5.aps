@@ -1,7 +1,7 @@
 [
 CONST a int 42;
 FUN f int [x:int] (sub x a);
-FUN REC g bool [x:int] (if (lt x 0) false
+FUN g bool [x:int] (if (lt x 0) false
                             (if (eq x 0) true false));
-ECHO (f 50)
+ECHO (f 84)
 ]

@@ -1,4 +1,4 @@
-[ CONST a int (add 1 2);
+[ CONST a int (add 23 19);
  CONST b int (sub 3 2);
  CONST c int (mul 1 2);
  CONST d int (div 6 2);

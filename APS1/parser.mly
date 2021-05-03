@@ -40,7 +40,7 @@ open Ast
 
 %%
   prog:
-    LBRACKET cmds RBRACKET {$2}
+    block {$1}
   ;
 
   block:

@@ -21,5 +21,10 @@
   SET (nth xs 2) 4;
   SET (nth xs 3) 3;
   SET (nth xs 4) 2;
-  CALL bubble xs
+  CALL bubble xs;
+  ECHO (nth xs 0); 
+  ECHO (nth xs 1); 
+  ECHO (nth xs 2); 
+  ECHO (nth xs 3);
+  ECHO (nth xs 4)
 ]

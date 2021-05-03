@@ -1,0 +1,6 @@
+[
+    VAR v int;
+    PROC p [x:int,y:int] [SET v (add x y)];
+    CALL p 21 21;
+    ECHO v
+]

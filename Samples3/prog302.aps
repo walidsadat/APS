@@ -1,0 +1,8 @@
+[
+  FUN f int [x:bool] [
+    IF x
+      [ RETURN 42 ]
+      [ RETURN 41 ]
+  ];
+  ECHO (f true)
+]

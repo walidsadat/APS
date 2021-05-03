@@ -11,5 +11,5 @@
   SET (nth (nth xs 2) 0) true;
   SET (nth (nth xs 2) 1) true;
   SET (nth (nth xs 2) 2) true;
-  SET (nth (nth xs 2) 3) true  
+  SET (nth (nth xs 2) 3) true
 ]

@@ -9,7 +9,7 @@
 (* ========================================================================== *)
 
 type prog =
-  cmd list
+  block
 
 and block =
   cmd list
@@ -17,15 +17,6 @@ and block =
 and cmd =
   Stat of stat
   | Def of def
-
-and stype =
-  BoolType
-  | IntType
-  | VoidType
-  | VecType of stype
-  | Types of stype list * stype
-
-and arg = string * stype
 
 and def =
   ConstDef of string * stype * sexpr
@@ -35,17 +26,31 @@ and def =
   | ProcDef of string * arg list * block
   | RecProcDef of string * arg list * block
 
+and stype =
+  BoolType
+  | IntType
+  | VoidType
+  | VecType of stype
+  | Types of stype list * stype
+
+  and arg = 
+  Arg of string * stype
+  |Argp of string * stype
+
 and stat =
   Echo of sexpr
-  |Set of string * sexpr
+  |Set of lvalue * sexpr
   |IfStat of sexpr * block * block
   |While of sexpr * block
-  |Call of string * sexpr list
-  |SetLvalue of lvalue * sexpr
+  |Call of string * sexprp list
 
 and lvalue =
-    LvalueId of string
-    |Lvalue of lvalue * sexpr
+  LvalueId of string
+  |Lvalue of lvalue * sexpr
+
+and sexprp =
+  ASTAdr of string
+  |ASTExpr of sexpr
 
 and sexpr =
   ASTBool of bool

@@ -1,12 +1,17 @@
 open Ast
 
-type value = Value of int | Closure of sexpr * (value list -> env) | RecClosure of (value -> (sexpr * (value list -> env)))
-            | Address of int | ProcClosure of (cmd list * (value list -> env)) | RecProcClosure of (value -> (cmd list * (value list -> env)))
+type value = Value of int | Closure of closure | RecClosure of recClosure
+            | ProcClosure of procClosure | RecProcClosure of recProcClosure
+            | Address of int
+and closure = sexpr * (value list -> env)
+and recClosure = (value -> closure)
+and procClosure = (cmd list * (value list -> env))
+and recProcClosure = value -> procClosure
 and flux = int list
 and env = (string * value) list
-and 'a address = None | Some of 'a | Any 
-and memory = value address list
 
+and espace = None | Some of value | Any
+and mem = (int * espace) list
 
 let rec int_of_value v =
   match v with
@@ -15,31 +20,48 @@ let rec int_of_value v =
 
 and getInEnv env e =
   match env with
-    (s,v)::t when e = s -> v
+    [] -> failwith "Not in env"
+    |(s,v)::t when e = s -> v
     |_::t -> getInEnv t e
-    |[] -> failwith "Not in env"
 
-and alloc_memory m =
-  if (Array.memq None m) then(
-    let i = ref 0 and fait = ref false in
-    while(!i < (Array.length m) && not !fait) do
-      if (m.(!i) = None) then (
-        m.(!i) <- Any;
-        fait := true;)
-      else
-          i := !i + 1
-    done;
-    (!i, m))
-  else (
-      let l = Array.length m in
-      let n = Array.make (l*2) None in
-      Array.blit m 0 n 0 l;
-      n.(l) <- Any;
-      (l,n)
-  )
+and getInMem mem adr =
+  match mem with
+      [] -> failwith "Not in mem"
+      |(k,v)::t when k = adr -> v
+      |_::t -> getInMem t adr
+
+and newAddress mem =(
+  let rec aux m a =
+    match m with
+      [] -> Address (a+1)
+      |(k,_)::t when k > a -> aux t k
+      |(k,_)::t  -> aux t a
+  in aux mem 0)
+
+and alloc_memory mem =
+  let adr = newAddress mem in
+      match adr with
+        Address a -> (adr, mem@[(a,Any)])
+        |_ -> failwith "Error in allocation"
+
+and replaceElem l x e =(
+    let rec aux l x e lr = 
+      match l with
+        [] -> lr
+        |h::t when h = x -> aux t x e lr@[e]
+        |h::t ->aux t x e lr@[h]
+    in aux l x e [])
+
+and editInMem mem adr v =
+  let rec aux m adr v =
+    match m with
+      [] -> failwith "Not in mem"
+      |(k,e)::t when k = adr -> replaceElem mem (k,e) (k,v)
+      |_::t -> aux t adr v
+    in aux mem adr v
 
 and eval_prog p =
-  let (_, flux) = eval_block ([], [|None|], []) p in
+  let (_, flux) = eval_block ([], [], []) p in
     List.rev flux
 
 and eval_block etatInit b =
@@ -59,7 +81,7 @@ and eval_def (env, mem) def =
     ConstDef (id, _, e) -> ((id, eval_sexpr (env, mem) e)::env,mem)
     | FunDef (id, _, args, e) -> ((id,Closure(e,eval_args env args))::env,mem)
     | RecFunDef (id, _, args, e) -> ((id, RecClosure(fun f -> (e, fun a -> (id,f)::(List.combine (fst (List.split args)) a)@env)))::env,mem)
-    | VarDef (id,_) -> let (a, memRes) = alloc_memory mem in ((id, Address a)::env, memRes)
+    | VarDef (id,_) -> let (a, memRes) = alloc_memory mem in ((id, a)::env, memRes)
     | ProcDef (id, args, b) -> ((id, ProcClosure(b, eval_args env args))::env, mem)
     | RecProcDef (id, args, b) -> ((id, RecProcClosure(fun p -> (b, fun a -> (id,p)::(List.combine (fst (List.split args)) a)@env)))::env,mem)
 
@@ -69,8 +91,8 @@ and eval_stat (env,mem,flux) stat =
                     Value i -> (mem,(i::flux))
                     | _ -> failwith "Error ECHO" )
   |Set (id, e) -> ( match (getInEnv env id) with
-                    Address a -> mem.(a) <- Some (eval_sexpr (env, mem) e);(mem,flux)
-                    |_ -> failwith (id^"not a Var"))
+                    Address a -> let mem' = editInMem mem a (Some (eval_sexpr (env, mem) e)) in (mem',flux)
+                    |_ -> failwith (id^" not a Var"))
   |IfStat (c, i, e) -> (match (eval_sexpr (env, mem) c) with
                         Value 1 -> let (mem,flux) = eval_block (env, mem, flux) i in
                                     ((mem, flux))
@@ -97,10 +119,10 @@ and eval_sexpr (env, mem) value =
     | ASTBool false -> Value 0
     | ASTNum n -> Value n
     | ASTId x -> (match getInEnv env x with
-                  Address a -> (match mem.(a) with
+                  Address a -> (match getInMem mem a with
                                 Some v -> v
                                 |Any -> Value 0
-                                |_ -> failwith (x^"not in memory"))
+                                |_ -> failwith (x^" not in memory"))
                   | v -> v)
     | ASTIf (c, i, e) -> (match (eval_sexpr (env, mem) c) with
                           Value 1 -> eval_sexpr (env, mem) i

@@ -11,5 +11,10 @@
 	]
     ];
   CONST xs (vec int) (alloc 5);
-  CALL fill xs
+  CALL fill xs;
+  ECHO (nth xs 0); 
+  ECHO (nth xs 1); 
+  ECHO (nth xs 2); 
+  ECHO (nth xs 3); 
+  ECHO (nth xs 4) 
 ]

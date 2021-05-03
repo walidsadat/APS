@@ -49,6 +49,8 @@ rule token = parse
   | "nth"            { OPRIM("nth") }
   | "alloc"          { OPRIM("alloc") }
   | "if"             { IF }
+  | "var"            { VARP }
+  | "adr"            { ADR }
   | "IF"             { IF }
   | "SET"            { SET }
   | "WHILE"          { WHILE }
