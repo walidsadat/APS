@@ -1,1 +1,1 @@
-[ CONST v int 13; ECHO v ]
+[ CONST v int 42; ECHO v ]

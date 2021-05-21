@@ -1,4 +1,4 @@
 [
 FUN REC f int [x:int, y:int] (if (eq y 0) x (f x 0));
-ECHO (f 2 1)
+ECHO (f 42 1)
 ]

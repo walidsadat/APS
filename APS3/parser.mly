@@ -21,14 +21,14 @@ open Ast
 %token CONST FUN REC VAR PROC
 %token VARP ADR
 %token ECHO RETURN
-%token BOOL INT VOID VEC
+%token BOOL INT VEC
 %token IF
 %token SET WHILE CALL
 
 %type <Ast.prog> prog
-%type <Ast.block> block
+%type <Ast.bloc> bloc
 %type <Ast.cmd list> cmds
-%type <Ast.def> def
+%type <Ast.dec> dec
 %type <Ast.stype> type
 %type <Ast.stype list> types
 %type <Ast.arg list> args
@@ -46,99 +46,98 @@ open Ast
 
 %%
   prog:
-    block {$1}
+    bloc {$1}
   ;
 
-  block:
+  bloc:
     LBRACKET cmds RBRACKET {$2}
+  ;
 
   cmds:
-      stat                        { [Stat $1]}
-    | def SEMICOL cmds          { (Def $1)::$3}
-    | stat SEMICOL cmds         { (Stat $1)::$3}
-    | RETURN sexpr              { [Return $2]}
+      stat                                            {[Stat $1]}
+    | dec SEMICOL cmds                                {(Dec $1)::$3}
+    | stat SEMICOL cmds                               {(Stat $1)::$3}
+    | RETURN sexpr                                    {[Return $2]}
   ;
 
-  def:
-      CONST IDENT type sexpr      { ConstDef($2,$3,$4) }
-    | FUN IDENT type LBRACKET args RBRACKET block {FunProcDef($2,$3,$5,$7)}
-    | FUN REC IDENT type LBRACKET args RBRACKET block {RecFunProcDef($3,$4,$6,$8)}
-    | FUN IDENT type LBRACKET args RBRACKET sexpr { FunDef ($2, $3, $5, $7)}
-    | FUN REC IDENT type LBRACKET args RBRACKET sexpr { RecFunDef ($3, $4, $6, $8)}
-    | VAR IDENT stype      {VarDef($2, $3)}
-    | PROC IDENT LBRACKET argsp RBRACKET block {ProcDef($2,$4,$6)}
-    | PROC REC IDENT LBRACKET argsp RBRACKET block {RecProcDef($3,$5,$7)}
+  dec:
+      CONST IDENT type sexpr                          {ConstDec ($2,$3,$4)}
+    | FUN IDENT type LBRACKET args RBRACKET bloc      {FunPDec ($2,$3,$5,$7)}
+    | FUN REC IDENT type LBRACKET args RBRACKET bloc  {FunRecPDec ($3,$4,$6,$8)}
+    | FUN IDENT type LBRACKET args RBRACKET sexpr     {FunDec ($2,$3,$5,$7)}
+    | FUN REC IDENT type LBRACKET args RBRACKET sexpr {FunRecDec ($3,$4,$6,$8)}
+    | VAR IDENT stype                                 {VarDec($2,$3)}
+    | PROC IDENT LBRACKET argsp RBRACKET bloc         {ProcDec($2,$4,$6)}
+    | PROC REC IDENT LBRACKET argsp RBRACKET bloc     {ProcRecDec($3,$5,$7)}
   ;
 
   type:
-      stype                         {$1}
-    | LPAR types ARROW type RPAR  { Types ($2, $4) }
+      stype                                           {$1}
+    | LPAR types ARROW type RPAR                      {Types ($2, $4)}
   ;
 
   types:
-      type                      { [$1] }
-    | type TIMES types       { $1::$3 }
+      type                                            {[$1]}
+    | type TIMES types                                {$1::$3}
   ;
 
   stype:
-      BOOL                          { BoolType }
-    | INT                         { IntType }
-    | VOID                        { VoidType}
-    | LPAR VEC type RPAR          { VecType($3)}
+      BOOL                                            {BoolType}
+    | INT                                             {IntType}
+    | LPAR VEC type RPAR                              {VecType $3}
 
   args:
-      arg                      { [$1] }
-    | arg COMMA args           { $1::$3 }
+      arg                                             {[$1]}
+    | arg COMMA args                                  {$1::$3}
   ;
 
   arg:
-    IDENT COLON type           {Arg($1,$3)}
+      IDENT COLON type                                {Arg ($1,$3)}
   ;
 
   argsp:
-    argp                    {[$1]}
-    |argp COMMA argsp        { $1::$3 }
+      argp                                            {[$1]}
+    | argp COMMA argsp                                {$1::$3}
   ;
 
   argp:
-    IDENT COLON type                  {Arg($1,$3)}
-    | VARP IDENT COLON type           {Argp($2,$4)}
+      IDENT COLON type                                 {Arg ($1,$3)}
+    | VARP IDENT COLON type                            {Argp ($2,$4)}
   ;
 
   stat:
-    ECHO sexpr                   {Echo($2)}
-    |SET lvalue sexpr             {Set($2,$3)}
-    |IF sexpr block block        {IfStat($2,$3,$4)}
-    |WHILE sexpr block           {While($2,$3)}
-    |CALL IDENT sexprsp           {Call($2,$3)}
-    |CALL IDENT sexprsp           {Call($2,$3)}
+      ECHO sexpr                                        {Echo $2}
+    | SET lvalue sexpr                                  {Set ($2,$3)}
+    | IF sexpr bloc bloc                              {IfStat ($2,$3,$4)}
+    | WHILE sexpr bloc                                 {While ($2,$3)}
+    | CALL IDENT sexprsp                                {Call ($2,$3)}
   ;
 
   lvalue:
-      IDENT                         {LvalueId($1)}
-    | LPAR OPRIM lvalue sexpr RPAR  {if $2 = "nth" then Lvalue($3,$4) else raise Parsing.Parse_error }
+      IDENT                                             {Lvar $1}
+    | LPAR OPRIM lvalue sexpr RPAR                      {if $2 = "nth" then Lnth ($3,$4) else raise Parsing.Parse_error}
 
   sexprsp:
-    sexprp                           { [$1] }
-    |sexprp sexprsp                  { $1::$2 }
+      sexprp                                            {[$1]}
+    | sexprp sexprsp                                    {$1::$2}
   ;
 
   sexprp:
-    sexpr                            {ASTExpr($1)}
-    |LPAR ADR IDENT RPAR             {ASTAdr($3)}
+      sexpr                                             {ASTExpr $1}
+    | LPAR ADR IDENT RPAR                               {ASTAdr $3}
   ;
 
   sexpr:
-      CBOOL                          { ASTBool($1) }
-    | NUM                            { ASTNum($1) }
-    | IDENT                          { ASTId($1) }
-    | LPAR IF sexpr sexpr sexpr RPAR { ASTIf($3,$4,$5) }
-    | LPAR OPRIM sexprs RPAR         { ASTOp($2,$3) }
-    | LPAR sexpr sexprs RPAR         { ASTApp($2,$3) }
-    | LBRACKET args RBRACKET sexpr   { ASTFunAbs($2,$4) }
+      CBOOL                                             {ASTBool $1}
+    | NUM                                               {ASTNum $1}
+    | IDENT                                             {ASTId $1}
+    | LPAR IF sexpr sexpr sexpr RPAR                    {ASTIf ($3,$4,$5)}
+    | LPAR OPRIM sexprs RPAR                            {ASTOp ($2,$3)}
+    | LPAR sexpr sexprs RPAR                            {ASTApp ($2,$3)}
+    | LBRACKET args RBRACKET sexpr                      {ASTFunAbs($2,$4)}
   ;
 
   sexprs:
-      sexpr       { [$1] }
-    | sexpr sexprs { $1::$2 }
+      sexpr                                             {[$1]}
+    | sexpr sexprs                                      {$1::$2}
   ;

@@ -9,60 +9,56 @@
 (* ========================================================================== *)
 
 type prog =
-  block
+  bloc
 
-and block =
+and bloc =
   cmd list
 
 and cmd =
-  Stat of stat
-  | Def of def
+    Dec of dec
+  | Stat of stat
   | Return of sexpr
 
-and def =
-  ConstDef of string * stype * sexpr
-  | FunDef of string * stype * arg list * sexpr
-  | RecFunDef of string * stype * arg list * sexpr
-  | VarDef of string * stype
-  | ProcDef of string * arg list * block
-  | RecProcDef of string * arg list * block
-  | FunProcDef of string * stype * arg list * block
-  | RecFunProcDef of string * stype * arg list * block
+and dec =
+    ConstDec of string * stype * sexpr
+  | FunDec of string * stype * arg list * sexpr
+  | FunRecDec of string * stype * arg list * sexpr
+  | VarDec of string * stype
+  | ProcDec of string * arg list * bloc
+  | ProcRecDec of string * arg list * bloc
+  | FunPDec of string * stype * arg list * bloc
+  | FunRecPDec of string * stype * arg list * bloc
 
 and stype =
-  BoolType
+    BoolType
   | IntType
-  | VoidType
   | VecType of stype
   | Types of stype list * stype
 
-  and arg = 
-  Arg of string * stype
-  |Argp of string * stype
+and arg = 
+    Arg of string * stype
+  | Argp of string * stype
 
 and stat =
-  Echo of sexpr
-  |Set of lvalue * sexpr
-  |IfStat of sexpr * block * block
-  |While of sexpr * block
-  |Call of string * sexprp list
+    Echo of sexpr
+  | Set of lvalue * sexpr
+  | IfStat of sexpr * bloc * bloc
+  | While of sexpr * bloc
+  | Call of string * sexprp list
 
 and lvalue =
-  LvalueId of string
-  |Lvalue of lvalue * sexpr
+    Lvar of string
+  | Lnth of lvalue * sexpr
 
 and sexprp =
-  ASTAdr of string
-  |ASTExpr of sexpr
+    ASTAdr of string
+  | ASTExpr of sexpr
 
 and sexpr =
-  ASTBool of bool
+    ASTBool of bool
   | ASTNum of int
   | ASTId of string
   | ASTIf of sexpr * sexpr * sexpr
   | ASTOp of string * sexpr list
   | ASTApp of sexpr * sexpr list
   | ASTFunAbs of arg list * sexpr
-
-
-

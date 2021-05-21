@@ -1,0 +1,11 @@
+[
+    VAR n int;
+    CONST a int 42;
+    SET n 41;
+    PROC inc [var x:int] [ SET x (add x 1) ];
+    PROC echo [x:int] [ ECHO x];
+    ECHO n;
+    CALL inc (adr n);
+    CALL echo a;
+    ECHO n
+]

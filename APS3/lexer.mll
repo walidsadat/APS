@@ -32,7 +32,6 @@ rule token = parse
   | "PROC"           { PROC }
   | "bool"           { BOOL }
   | "int"            { INT }
-  | "void"           { VOID }
   | "vec"            { VEC }
   | "true" as lxm    { CBOOL(bool_of_string lxm) }
   | "false" as lxm   { CBOOL(bool_of_string lxm) }

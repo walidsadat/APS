@@ -1,77 +1,64 @@
-% orVoid(type)
-simplifier(orVoid(orVoid(T)), orVoid(T)).
-simplifier(orVoid(void), void).
-simplifier(T, T) :- not(T = orVoid(orVoid(_))), not(T = orVoid(void)).
+%% Check if a var is in the context
+inCtx([(X,T)|_],X,T).
+inCtx([(_,_)|C],X,T) :- inCtx(C,X,T).
 
-
-%% inCtx(ctx, var, type)
-
-inCtx([(V,T)|_],V,T).
-inCtx([(_,_)|C],V,T) :- inCtx(C,V,T).
-
+%% Check types of a list of arguments
 checkArgsType([],[]).
-checkArgsType([(_,T)|ArgsList],[T|TypeList]) :- checkArgsType(ArgsList,TypeList).
+checkArgsType([(_,T)|ArgsList],[T|TypesList]) :- checkArgsType(ArgsList,TypesList).
 
-checkListType(_,[],[]).
-checkListType(Ctx, [E|ExprList], [T|TypeList]) :- exprType(Ctx, E, T), checkListType(Ctx, ExprList, TypeList).
+%% Check types of a list of expressions (exprs)
+checkExprsListType(_,[],[]).
+checkExprsListType(Ctx, [Expr|ExprsList], [T|TypesList]) :- exprType(Ctx, Expr, T), checkExprsListType(Ctx, ExprsList, TypesList).
 
-checkListTypeP(_,[],[]).
-checkListTypeP(Ctx, [E|ExprList], [T|TypeList]) :- exparType(Ctx, E, T), checkListTypeP(Ctx, ExprList, TypeList).
+%% Check types of a list of expressions (expars)
+checkExprsListTypeP(_,[],[]).
+checkExprsListTypeP(Ctx, [Expr|ExprsList], [T|TypesList]) :- exparType(Ctx, Expr, T), checkExprsListTypeP(Ctx, ExprsList, TypesList).
 
 %% Check a program
 %% progType(prog, void)
+progType(bloc(Bk),void) :- cmdsType([], Bk, void).
 
-progType(prog(Cs),void) :- cmdsType([], Cs, void).
+%% Check a bloc
+%% blocType(ctx,bloc, void)
+blocType(ctx,bloc(Cs),T) :- cmdsType(ctx, Cs, T).
 
-%% Check a block
-%% blockType(ctx,block, void)
-
-blockType(ctx,block(Cs),T) :- cmdsType(ctx, Cs, T).
-
-%% Check commands
+%% Check a list of commands
 %% cmdsType(Ctx, cmds, type)
-
-cmdsType(Ctx, [Def|Cs], T) :- defType(Ctx, Def, CtxRes), cmdsType(CtxRes, Cs, T).
+cmdsType(Ctx, [Dec|Cs], T) :- defType(Ctx, Dec, CtxRes), cmdsType(CtxRes, Cs, T).
 cmdsType(Ctx, [Stat|Cs], T) :- statType(Ctx, Stat, void), cmdsType(Ctx, Cs, T).
-cmdsType(Ctx, [Stat|Cs], T) :- statType(Ctx, Stat, orVoid(T)), cmdsType(Ctx, Cs, T).
-cmdsType(Ctx, [Stat], T) :- statType(Ctx, Stat, T).
-cmdsType(Ctx, [return(E)], T) :- exprType(Ctx, E, T).
+cmdsType(Ctx, [Stat|Cs], T) :- statType(Ctx, Stat, union(T,void)), cmdsType(Ctx, Cs, T).
+cmdsType(Ctx, [Stat], T) :- T\=void, statType(Ctx, Stat, T).
+cmdsType(Ctx, [ret(E)], T) :- exprType(Ctx, E, T).
 cmdsType(_,[],void).
 
 %% Check a definition
 %% defType(Ctx, def, CtxRes)
-
-defType(Ctx, const(X,T,E), [(X,T)|Ctx]) :- exprType(Ctx,E,T).
-defType(Ctx,fun(X,Tr,Xts,E), [(X, types(T,Tr))|Ctx]) :- checkArgsType(Xts, T), append(Xts, Ctx, CtxRes), exprType(CtxRes, E, Tr).
-defType(Ctx,funrec(X,Tr,Xts,E), [(X, types(T,Tr))|Ctx]) :- checkArgsType(Xts, T), append(Xts, Ctx, CtxRes), exprType([(X,types(T,Tr))|CtxRes],E,Tr).
+defType(Ctx,const(X,T,E), [(X,T)|Ctx]) :- exprType(Ctx,E,T).
+defType(Ctx,fun(X,T,Args,E), [(X, types(TypeArgs,T))|Ctx]) :- checkArgsType(Args, TypeArgs), append(Args, Ctx, CtxRes), exprType(CtxRes, E, T).
+defType(Ctx,funrec(X,T,Args,E), [(X, types(TypeArgs,T))|Ctx]) :- checkArgsType(Args, TypeArgs), append(Args, Ctx, CtxRes), exprType([(X,types(TypeArgs,T))|CtxRes],E,T).
 defType(Ctx,var(X,ref(T)),[(X,ref(T))|Ctx]).
-defType(Ctx,proc(X,Xts,block(B)), [(X, types(T,void))|Ctx]) :- checkArgsType(Xts, T), append(Xts, Ctx, CtxRes), cmdsType(CtxRes, B, void).
-defType(Ctx,procrec(X,Xts,block(B)), [(X, types(T,void))|Ctx]) :- checkArgsType(Xts, T), append(Xts, Ctx, CtxRes), cmdsType([(X,types(T,void))|CtxRes], B, void).
-defType(Ctx,funproc(X,Tr,Xts,block(B)), [(X, types(T,Tr))|Ctx]) :- checkArgsType(Xts, T), append(Xts, Ctx, CtxRes), cmdsType(CtxRes, B, Tr).
-defType(Ctx,funprocrec(X,Tr,Xts,block(B)), [(X, types(T,Tr))|Ctx]) :- checkArgsType(Xts, T), append(Xts, Ctx, CtxRes), cmdsType([(X,types(T,Tr))|CtxRes], B, Tr).
+defType(Ctx,proc(X,Argsp,bloc(B)), [(X, types(TypeArgsp,void))|Ctx]) :- checkArgsType(Argsp, TypeArgsp), append(Argsp, Ctx, CtxRes), cmdsType(CtxRes, B, void).
+defType(Ctx,procrec(X,Argsp,bloc(B)), [(X, types(TypeArgsp,void))|Ctx]) :- checkArgsType(Argsp, TypeArgsp), append(Argsp, Ctx, CtxRes), cmdsType([(X,types(TypeArgsp,void))|CtxRes], B, void).
+defType(Ctx,funp(X,T,Argsp,bloc(B)), [(X, types(TypeArgsp,T))|Ctx]) :- checkArgsType(Argsp, TypeArgsp), append(Argsp, Ctx, CtxRes), cmdsType(CtxRes, B, T).
+defType(Ctx,funrecp(X,T,Argsp,bloc(B)), [(X, types(TypeArgsp,T))|Ctx]) :- checkArgsType(Argsp, TypeArgsp), append(Argsp, Ctx, CtxRes), cmdsType([(X,types(TypeArgsp,T))|CtxRes], B, T).
 
 %% Check a statement
 %% statType(ctx, stat, type)
-
 statType(Ctx,echo(E),void) :- exprType(Ctx,E,int).
-statType(Ctx,set(X,E),void) :- inCtx(Ctx,X,ref(T)), exprType(Ctx,E,T).
-statType(Ctx,set(L,E),void) :- exprType(Ctx,L,T), exprType(Ctx,E,T).
-statType(Ctx,ifstat(C,block(B1),block(B2)),T) :- exprType(Ctx,C,bool), cmdsType(Ctx, B1, T), cmdsType(Ctx, B2, T).
-statType(Ctx,ifstat(C,block(B1),block(B2)),Ti) :- exprType(Ctx,C,bool), cmdsType(Ctx, B1, T), cmdsType(Ctx, B2, void), simplifier(orVoid(T),Ti).
-statType(Ctx,ifstat(C,block(B1),block(B2)),Ti) :- exprType(Ctx,C,bool), cmdsType(Ctx, B1, void), cmdsType(Ctx, B2, T), simplifier(orVoid(T),Ti).
-statType(Ctx,while(C, block(B)),orVoid(T)) :- exprType(Ctx,C,bool), cmdsType(Ctx, B, T).
-statType(Ctx,call(X,E),void) :- checkListTypeP(Ctx, E, T), inCtx(Ctx, X, types(T,void)).
-
+statType(Ctx,set(X,E),void) :- exprType(Ctx,X,T), exprType(Ctx,E,T).
+statType(Ctx,ifstat(E,bloc(Bk1),bloc(Bk2)),T) :- exprType(Ctx,E,bool), cmdsType(Ctx, Bk1, T), cmdsType(Ctx, Bk2, T).
+statType(Ctx,ifstat(E,bloc(Bk1),bloc(Bk2)),union(T,void)) :- T\=void, exprType(Ctx,E,bool), cmdsType(Ctx, Bk1, void), cmdsType(Ctx, Bk2, T).
+statType(Ctx,ifstat(E,bloc(Bk1),bloc(Bk2)),union(T,void)) :- T\=void, exprType(Ctx,E,bool), cmdsType(Ctx, Bk1, T), cmdsType(Ctx, Bk2, void).
+statType(Ctx,while(E, bloc(Bk)),union(T,void)) :- exprType(Ctx,E,bool), cmdsType(Ctx, Bk, T).
+statType(Ctx,call(X,Es),void) :- checkExprsListTypeP(Ctx, Es, T), inCtx(Ctx, X, types(T,void)).
 
 %% Check an expar
 %% exparType(ctx, expr, type)
-
 exparType(Ctx,adr(ident(X)),ref(T)) :- inCtx(Ctx,X,ref(T)).
 exparType(Ctx,expr(X),T) :- exprType(Ctx,X,T), \+(T=ref(_)).
 
 %% Check an expression
 %% exprType(ctx, expr, type)
-
 exprType(_,true,bool).
 exprType(_,false,bool).
 exprType(_,N,int) :- integer(N).
@@ -87,7 +74,7 @@ exprType(Ctx,add(E1,E2), int) :- exprType(Ctx,E1,int), exprType(Ctx,E2,int).
 exprType(Ctx,sub(E1,E2), int) :- exprType(Ctx,E1,int), exprType(Ctx,E2,int).
 exprType(Ctx,mul(E1,E2), int) :- exprType(Ctx,E1,int), exprType(Ctx,E2,int).
 exprType(Ctx,div(E1,E2), int) :- exprType(Ctx,E1,int), exprType(Ctx,E2,int).
-exprType(Ctx,app(E,Es),Tr) :- checkListType(Ctx, Es, Ts), exprType(Ctx,E, types(Ts,Tr)).
+exprType(Ctx,app(E,Es),Tr) :- checkExprsListType(Ctx, Es, Ts), exprType(Ctx,E, types(Ts,Tr)).
 exprType(Ctx,funabs(Xs,E),types(T,Tr)) :- checkArgsType(Xs, T), append(Xs,Ctx,Ctx2), exprType(Ctx2, E, Tr).
 exprType(Ctx,alloc(E), vec(_)) :- exprType(Ctx,E,int).
 exprType(Ctx,len(E), int) :- exprType(Ctx,E,vec(_)).

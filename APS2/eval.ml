@@ -155,18 +155,6 @@ and eval_lvalue (env,mem) lval =
                                                               |_ ->failwith "Error in lnth")
                                             |_ -> failwith "Error in lnth")
                               )
-      (*
-      let (b, mem') = eval_lvalue (env,mem) lval in
-                          let (e', mem'') = eval_sexpr (env, mem') e in 
-                          (match (b, e') with
-                            (Block (Address b, n), Value i) -> if i < 0 || i > n then raise ArrayOutOfBoundExceptionAPS;
-                                  (Address (b+i), mem'')
-                            |(Address a, Value i) -> (match getInMem mem'' a with
-                                        (Block (Address b,n)) -> if i < 0 || i > n then raise ArrayOutOfBoundExceptionAPS;
-                                        (Address (b+i), mem'')
-                                        |_ -> failwith "Error eval Lvalue")
-                            |_ -> failwith "Error Lvalue")
-                            *)
 
 and eval_sexprp (env, mem) value =
   match value with
